@@ -62,9 +62,9 @@ import genmsg.gentools
 from genmsg import InvalidMsgSpec, MsgContext, MsgSpec, MsgGenerationException
 from genmsg.base import log
 
-from . base import is_simple, SIMPLE_TYPES, SIMPLE_TYPES_DICT
-from . generate_numpy import unpack_numpy, pack_numpy, NUMPY_DTYPE
-from . generate_struct import reduce_pattern, serialize, \
+from base import is_simple, SIMPLE_TYPES, SIMPLE_TYPES_DICT
+from generate_numpy import unpack_numpy, pack_numpy, NUMPY_DTYPE
+from generate_struct import reduce_pattern, serialize, \
      int32_pack, int32_unpack, pack, pack2, unpack, unpack2, compute_struct_pattern, \
      clear_patterns, add_pattern, get_patterns
 
@@ -213,7 +213,7 @@ def _remap_reserved(field_name):
     else:
         prefix = ''
         sub_field_name = field_name
-        
+
     if sub_field_name in keyword.kwlist + ['self']:
         sub_field_name = sub_field_name + "_"
     return prefix + sub_field_name
@@ -935,6 +935,24 @@ class Generator(object):
         self.spec_loader_fn = spec_loader_fn
         self.generator_fn = generator_fn
 
+    def firos_generate(self, msg_context, full_type, topic_data, outdir, search_path):
+        # generate message files for request/response
+        formatted_msg = ""
+        for data in topic_data['msg']:
+            formatted_msg += str(topic_data['msg'][data]) + " " + str(data) + "\n"
+        formatted_msg = formatted_msg[:-1]
+        spec = self.spec_loader_fn(msg_context, formatted_msg, full_type)
+        file_name = full_type.replace("/", "")
+        outfile = os.path.join(outdir, file_name + ".py")
+
+        print("Generating message definition for " + full_type)
+
+        with open(outfile, 'w') as f:
+            for l in self.generator_fn(msg_context, spec, search_path):
+                f.write(l+'\n')
+            f.close()
+        return outfile
+
     def generate(self, msg_context, full_type, f, outdir, search_path):
         try:
             # you can't just check first... race condition
@@ -949,6 +967,42 @@ class Generator(object):
             for l in self.generator_fn(msg_context, spec, search_path):
                 f.write(l+'\n')
         return outfile
+
+    def generate_firos_messages(self, package, data, outdir, search_path):
+        """
+        :returns: return code, ``int``
+        """
+        if not genmsg.is_legal_resource_base_name(package):
+            raise MsgGenerationException("\nERROR: package name '%s' is illegal and cannot be used in message generation.\nPlease see http://ros.org/wiki/Names"%(package))
+
+        # package/src/package/msg for messages, packages/src/package/srv for services
+        msg_context = MsgContext.create_default()
+        retcode = 0
+        try:
+            # you can't just check first... race condition
+            current_path = os.path.dirname(os.path.abspath(__file__))
+            outdir = current_path.replace("genpy", "ros/" + outdir)
+            print("Opening Directory: " + outdir + "\n")
+            os.makedirs(outdir)
+            f = open(os.path.join(outdir, "__init__.py"), 'w')
+            f.close()
+        except OSError as e:
+            if e.errno != 17: # file exists
+                raise
+
+        for robotName in data:
+            try:
+                robot = data[robotName]
+                for topic in robot['topics']:
+                    full_type = str(robotName) + '/' + str(topic['name'])
+                    if type(topic['msg']) is dict:
+                        self.generate(msg_context, full_type, topic, outdir, search_path) #actual generation
+            except Exception as e:
+                if not isinstance(e, MsgGenerationException) and not isinstance(e, genmsg.msgs.InvalidMsgSpec):
+                    traceback.print_exc()
+                print("\nERROR: Unable to generate %s for package '%s': %s\n"%(self.what, package, e), file=sys.stderr)
+                retcode = 1 #flag error
+        return retcode
 
     def generate_messages(self, package, package_files, outdir, search_path):
         """
@@ -965,7 +1019,7 @@ class Generator(object):
                 f = os.path.abspath(f)
                 infile_name = os.path.basename(f)
                 full_type = genmsg.gentools.compute_full_type_name(package, infile_name);
-                outfile = self.generate(msg_context, full_type, f, outdir, search_path) #actual generation
+                outfile = self.firos_generate(msg_context, full_type, f, outdir, search_path) #actual generation
             except Exception as e:
                 if not isinstance(e, MsgGenerationException) and not isinstance(e, genmsg.msgs.InvalidMsgSpec):
                     traceback.print_exc()
