@@ -996,7 +996,7 @@ class Generator(object):
                 for topic in robot['topics']:
                     full_type = str(robotName) + '/' + str(topic['name'])
                     if type(topic['msg']) is dict:
-                        self.generate(msg_context, full_type, topic, outdir, search_path) #actual generation
+                        self.firos_generate(msg_context, full_type, topic, outdir, search_path) #actual generation
             except Exception as e:
                 if not isinstance(e, MsgGenerationException) and not isinstance(e, genmsg.msgs.InvalidMsgSpec):
                     traceback.print_exc()
@@ -1019,7 +1019,7 @@ class Generator(object):
                 f = os.path.abspath(f)
                 infile_name = os.path.basename(f)
                 full_type = genmsg.gentools.compute_full_type_name(package, infile_name);
-                outfile = self.firos_generate(msg_context, full_type, f, outdir, search_path) #actual generation
+                outfile = self.generate(msg_context, full_type, f, outdir, search_path) #actual generation
             except Exception as e:
                 if not isinstance(e, MsgGenerationException) and not isinstance(e, genmsg.msgs.InvalidMsgSpec):
                     traceback.print_exc()
@@ -1040,8 +1040,8 @@ class MsgGenerator(Generator):
     package. See genutil.Generator. In order to generator code for a
     single .msg file, see msg_generator.
     """
-    def __init__(self):
+    def __init__(self, loader=genmsg.msg_loader.load_msg_from_file):
         super(MsgGenerator, self).__init__('messages', genmsg.EXT_MSG,
-                                           genmsg.msg_loader.load_msg_from_file,
+                                           loader,
                                            msg_generator)
 
