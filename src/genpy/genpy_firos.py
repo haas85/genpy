@@ -46,12 +46,12 @@ from generate_initpy import write_modules
 def usage(progname):
     print("%(progname)s file(s)"%vars())
 
-def genmain(data, gen):
+def genmain(data, gen, outdir=None):
     OUTPUT = "topics"
     PACKAGE = "package" # Currently not used
     try:
         search_path = {}
-        retcode = gen.generate_firos_messages("package", data, OUTPUT, search_path)
+        retcode = gen.generate_firos_messages("package", data, outdir, OUTPUT, search_path)
 
     except genmsg.InvalidMsgSpec as e:
         print("ERROR: ", e, file=sys.stderr)

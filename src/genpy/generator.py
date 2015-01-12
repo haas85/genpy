@@ -968,7 +968,7 @@ class Generator(object):
                 f.write(l+'\n')
         return outfile
 
-    def generate_firos_messages(self, package, data, outdir, search_path):
+    def generate_firos_messages(self, package, data, outdir, OUTPUT, search_path):
         """
         :returns: return code, ``int``
         """
@@ -980,9 +980,7 @@ class Generator(object):
         retcode = 0
         try:
             # you can't just check first... race condition
-            current_path = os.path.dirname(os.path.abspath(__file__))
-            outdir = current_path.replace("genpy", "ros/" + outdir)
-            print("Opening Directory: " + outdir + "\n")
+            outdir = outdir + OUTPUT
             os.makedirs(outdir)
             f = open(os.path.join(outdir, "__init__.py"), 'w')
             f.close()
