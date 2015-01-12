@@ -51,7 +51,7 @@ import genmsg
 import genmsg.msg_loader
 from genmsg import MsgContext, MsgGenerationException
 
-from . generator import msg_generator
+from generator import msg_generator
 
 def _generate_dynamic_specs(msg_context, specs, dep_msg):
     """
@@ -67,13 +67,13 @@ def _generate_dynamic_specs(msg_context, specs, dep_msg):
     dep_pkg, dep_base_type = genmsg.package_resource_name(dep_type)
     dep_spec = genmsg.msg_loader.load_msg_from_string(msg_context, dep_msg[line1+1:], dep_type)
     return dep_type, dep_spec
-    
+
 def _gen_dyn_name(pkg, base_type):
     """
     Modify pkg/base_type name so that it can safely co-exist with
     statically generated files.
-    
-    :returns: name to use for pkg/base_type for dynamically generated message class. 
+
+    :returns: name to use for pkg/base_type for dynamically generated message class.
     @rtype: str
     """
     return "_%s__%s"%(pkg, base_type)
@@ -82,14 +82,14 @@ def _gen_dyn_modify_references(py_text, types):
     """
     Modify the generated code to rewrite names such that the code can
     safely co-exist with messages of the same name.
-    
+
     :param py_text: genmsg_py-generated Python source code, ``str``
     :returns: updated text, ``str``
     """
     for t in types:
         pkg, base_type = genmsg.package_resource_name(t)
         gen_name = _gen_dyn_name(pkg, base_type)
-        
+
         # Several things we have to rewrite:
         # - remove any import statements
         py_text = py_text.replace("import %s.msg"%pkg, '')
@@ -114,7 +114,7 @@ def generate_dynamic(core_type, msg_cat):
     """
     msg_context = MsgContext.create_default()
     core_pkg, core_base_type = genmsg.package_resource_name(core_type)
-    
+
     # REP 100: pretty gross hack to deal with the fact that we moved
     # Header. Header is 'special' because it can be used w/o a package
     # name, so the lookup rules end up failing. We are committed to
@@ -133,7 +133,7 @@ def generate_dynamic(core_type, msg_cat):
         # dependencies require more handling to determine type name
         dep_type, dep_spec = _generate_dynamic_specs(msg_context, specs, dep_msg)
         specs[dep_type] = dep_spec
-    
+
     # clear the message registration table and register loaded
     # types. The types have to be registered globally in order for
     # message generation of dependents to work correctly.
@@ -158,7 +158,7 @@ def generate_dynamic(core_type, msg_cat):
 
     # Afterwards, we are going to remove the directory so that the .pyc file gets cleaned up if it's still around
     atexit.register(shutil.rmtree, tmp_dir)
-    
+
     # write the entire text to a file and import it (it will get deleted when tmp_dir goes - above)
     tmp_file = tempfile.NamedTemporaryFile(suffix=".py",dir=tmp_dir,delete=False)
     tmp_file.file.write(full_text.encode())

@@ -44,8 +44,8 @@ import sys
 
 import genmsg
 
-from .base import is_simple
-from .rostime import Time, Duration, TVal
+from base import is_simple
+from rostime import Time, Duration, TVal
 
 # common struct pattern singletons for msgs to use. Although this
 # would better placed in a generator-specific module, we don't want to
@@ -111,7 +111,7 @@ def strify_message(val, indent='', time_offset=None, current_time=None, field_fi
             return "''"
         return val
     elif isinstance(val, TVal):
-        
+
         if time_offset is not None and isinstance(val, Time):
             val = val-time_offset
 
@@ -122,7 +122,7 @@ def strify_message(val, indent='', time_offset=None, current_time=None, field_fi
             return sec_str + nsec_str
         else:
             return '\n%ssecs: %s\n%snsecs: %s'%(indent, val.secs, indent, val.nsecs)
-        
+
     elif type_ in (list, tuple):
         if len(val) == 0:
             return "[]"
@@ -148,7 +148,7 @@ def strify_message(val, indent='', time_offset=None, current_time=None, field_fi
         ni = '  '+indent
         if sys.hexversion > 0x03000000: #Python3
             vals = '\n'.join([p%(f,
-                                 strify_message(_convert_getattr(val, f, t), ni, time_offset, current_time, field_filter, fixed_numeric_width)) for f,t in zip(val.__slots__, val._slot_types) if f in fields])			
+                                 strify_message(_convert_getattr(val, f, t), ni, time_offset, current_time, field_filter, fixed_numeric_width)) for f,t in zip(val.__slots__, val._slot_types) if f in fields])
         else: #Python2
             vals = '\n'.join([p%(f,
                                  strify_message(_convert_getattr(val, f, t), ni, time_offset, current_time, field_filter, fixed_numeric_width)) for f,t in itertools.izip(val.__slots__, val._slot_types) if f in fields])
@@ -156,7 +156,7 @@ def strify_message(val, indent='', time_offset=None, current_time=None, field_fi
             return '\n'+vals
         else:
             return vals
-        
+
     else:
         return str(val) #punt
 
@@ -179,9 +179,9 @@ def _convert_getattr(val, f, t):
 
 _widths = {
     'byte': 8, 'char': 8, 'int8': 8, 'uint8': 8,
-    'int16': 16, 'uint16': 16, 
-    'int32': 32, 'uint32': 32, 
-    'int64': 64, 'uint64': 64, 
+    'int16': 16, 'uint16': 16,
+    'int32': 32, 'uint32': 32,
+    'int64': 64, 'uint64': 64,
 }
 
 def check_type(field_name, field_type, field_val):
@@ -190,7 +190,7 @@ def check_type(field_name, field_type, field_val):
     verifies the python value.  check_type() is not designed to be
     fast and is targeted at error diagnosis. This type checker is not
     designed to run fast and is meant only for error diagnosis.
-    
+
     :param field_name: ROS .msg field name, ``str``
     :param field_type: ROS .msg field type, ``str``
     :param field_val: field value, ``Any``
@@ -222,7 +222,7 @@ def check_type(field_name, field_type, field_val):
                     raise SerializationError('field %s is a non-ascii string'%field_name)
             elif not type(field_val) == bytes:
                 raise SerializationError('field %s must be of type bytes or an ascii string'%field_name)
-        else:		
+        else:
             if type(field_val) == unicode:
                 raise SerializationError('field %s is a unicode string instead of an ascii string'%field_name)
             elif not isstring(field_val):
@@ -233,7 +233,7 @@ def check_type(field_name, field_type, field_val):
     elif field_type == 'duration':
         if not isinstance(field_val, Duration):
             raise SerializationError('field %s must be of type Duration'%field_name)
-        
+
     elif field_type.endswith(']'): # array type
         # use index to generate error if '[' not present
         base_type = field_type[:field_type.index('[')]
@@ -246,7 +246,7 @@ def check_type(field_name, field_type, field_val):
                 #don't need to check the individual bytes in the
                 #string.
                 return
-            
+
         if not type(field_val) in [list, tuple]:
             raise SerializationError('field %s must be a list or tuple type'%field_name)
         for v in field_val:
@@ -275,7 +275,7 @@ class Message(object):
     # performance, explicitly settings slots eliminates dictionary for
     # new-style object.
     __slots__ = ['_connection_header']
-    
+
     def __init__(self, *args, **kwds):
         """
         Create a new Message instance. There are multiple ways of
@@ -354,7 +354,7 @@ class Message(object):
             return False
         for f in self.__slots__:
             try:
-                v1 = getattr(self, f) 
+                v1 = getattr(self, f)
                 v2 = getattr(other, f)
                 if type(v1) in (list, tuple) and type(v2) in (list, tuple):
                     # we treat tuples and lists as equivalent
@@ -365,7 +365,7 @@ class Message(object):
             except AttributeError:
                 return False
         return True
-    
+
 
 def get_printable_message_args(msg, buff=None, prefix=''):
     """
@@ -384,7 +384,7 @@ def get_printable_message_args(msg, buff=None, prefix=''):
     if buff is None:
         if python3 == 1:
             buff = BytesIO()
-        else: 
+        else:
             buff = StringIO()
     for f in msg.__slots__:
         if isinstance(getattr(msg, f), Message):
@@ -416,7 +416,7 @@ def _fill_val(msg, f, v, keys, prefix):
             #TODO: this is a lossy conversion
             if isinstance(def_val, Time):
                 setattr(msg, f, Time.from_sec(v/1e9))
-            elif isinstance(def_val, Duration):                    
+            elif isinstance(def_val, Duration):
                 setattr(msg, f, Duration.from_sec(v/1e9))
             else:
                 raise MessageException("Cannot create time values of type [%s]"%(type(def_val)))
@@ -434,17 +434,17 @@ def _fill_val(msg, f, v, keys, prefix):
         if base_type in genmsg.msgs.PRIMITIVE_TYPES:
             # 3785
             if length is not None and len(v) != length:
-                raise MessageException("Field [%s%s] has incorrect number of elements: %s != %s"%(prefix, f, len(v), length))                
+                raise MessageException("Field [%s%s] has incorrect number of elements: %s != %s"%(prefix, f, len(v), length))
             setattr(msg, f, v)
 
         # - for complex types, we have to iteratively append to def_val
         else:
-            # 3785            
+            # 3785
             if length is not None and len(v) != length:
                 raise MessageException("Field [%s%s] has incorrect number of elements: %s != %s"%(prefix, f, len(v), length))
             list_msg_class = get_message_class(base_type)
             if list_msg_class is None:
-                raise MessageException("Cannot instantiate messages for field [%s%s] : cannot load class %s"%(prefix, f, base_type))                
+                raise MessageException("Cannot instantiate messages for field [%s%s] : cannot load class %s"%(prefix, f, base_type))
             del def_val[:]
             for el in v:
                 inner_msg = list_msg_class()
@@ -462,12 +462,12 @@ def _fill_val(msg, f, v, keys, prefix):
                 def_val.append(inner_msg)
     else:
         setattr(msg, f, v)
-    
-    
+
+
 def _fill_message_args(msg, msg_args, keys, prefix=''):
     """
     Populate message with specified args.
-    
+
     :param msg: message to fill, ``Message``
     :param msg_args: list of arguments to set fields to, ``[args]``
     :param keys: keys to use as substitute values for messages and timestamps.  ``dict``
@@ -480,25 +480,25 @@ def _fill_message_args(msg, msg_args, keys, prefix=''):
         raise ValueError("msg must be a Message instance: %s"%msg)
 
     if type(msg_args) == dict:
-        
+
         #print "DICT ARGS", msg_args
         #print "ACTIVE SLOTS",msg.__slots__
-        
+
         for f, v in msg_args.items():
             # assume that an empty key is actually an empty string
             if v == None:
                 v = ''
             _fill_val(msg, f, v, keys, prefix)
     elif type(msg_args) == list:
-        
+
         #print "LIST ARGS", msg_args
         #print "ACTIVE SLOTS",msg.__slots__
-        
+
         if len(msg_args) > len(msg.__slots__):
             raise MessageException("Too many arguments:\n * Given: %s\n * Expected: %s"%(msg_args, msg.__slots__))
         elif len(msg_args) < len(msg.__slots__):
             raise MessageException("Not enough arguments:\n * Given: %s\n * Expected: %s"%(msg_args, msg.__slots__))
-        
+
         for f, v in zip(msg.__slots__, msg_args):
             _fill_val(msg, f, v, keys, prefix)
     else:
@@ -519,19 +519,19 @@ def fill_message_args(msg, msg_args, keys={}):
     mainly used to provide values for the 'now' timestamp.
 
     :param msg: message to fill, ``Message``
-    :param msg_args: list of arguments to set fields to, or 
+    :param msg_args: list of arguments to set fields to, or
       If None, msg_args will be made an empty list., ``[args]``
     :param keys: keys to use as substitute values for messages and timestamps, ``dict``
     :raises: :exc:`MessageException` If not enough/too many message arguments to fill message
     """
     # a list of arguments is similar to python's
-    # *args, whereas dictionaries are like **kwds. 
+    # *args, whereas dictionaries are like **kwds.
 
     # empty messages serialize as a None, which we make equivalent to
     # an empty message
     if msg_args is None:
         msg_args = []
-    
+
     # msg_args is always a list, due to the fact it is parsed from a
     # command-line argument list.  We have to special-case handle a
     # list with a single dictionary, which has precedence over the
@@ -547,7 +547,7 @@ def fill_message_args(msg, msg_args, keys={}):
 def _get_message_or_service_class(type_str, message_type, reload_on_error=False):
     """
     Utility for retrieving message/service class instances. Used by
-    get_message_class and get_service_class. 
+    get_message_class and get_service_class.
     :param type_str: 'msg' or 'srv', ``str``
     :param message_type: type name of message/service, ``str``
     :returns: Message/Service  for message/service type or None, ``class``
@@ -599,7 +599,7 @@ def _get_message_or_service_class(type_str, message_type, reload_on_error=False)
         except:
             val = None
     return val
-        
+
 ## cache for get_message_class
 _message_class_cache = {}
 

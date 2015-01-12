@@ -30,7 +30,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from .base import SIMPLE_TYPES_DICT
+from base import SIMPLE_TYPES_DICT
 
 _context_patterns = []
 def add_pattern(p):
@@ -56,14 +56,14 @@ def compute_struct_pattern(types):
     """
     if not types: #important to filter None and empty first
         return None
-    try: 
+    try:
         return ''.join([SIMPLE_TYPES_DICT[t] for t in types])
     except:
         return None
 
 def reduce_pattern(pattern):
     """
-    Optimize the struct format pattern. 
+    Optimize the struct format pattern.
     :param pattern: struct pattern, ``str``
     :returns: optimized struct pattern, ``str``
     """
@@ -93,7 +93,7 @@ def reduce_pattern(pattern):
 ## :returns str: python call to write value returned by expr to serialization buffer
 def serialize(expr):
     return "buff.write(%s)"%expr
-    
+
 # int32 is very common due to length serialization, so it is special cased
 def int32_pack(var):
     """
